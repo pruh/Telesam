@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Telesam</string>
+    <string name="grant_permission">Grant read SMS permission</string>
+    <string name="ok_message">Your SMS messages will not be forwarded to Telegram</string>
 </resources>

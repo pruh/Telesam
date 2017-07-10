@@ -1,15 +1,15 @@
 package space.naboo.telesam.view
 
-import android.app.Activity
 import android.os.Bundle
+import android.support.v7.app.AppCompatActivity
 
-class MainActivity : Activity() {
+class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         if (savedInstanceState == null) {
-            fragmentManager.beginTransaction()
+            supportFragmentManager.beginTransaction()
                     .add(android.R.id.content, MainFragment.newInstance(), MainFragment.TAG)
                     .commit()
         }
