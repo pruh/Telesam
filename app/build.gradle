@@ -12,6 +12,11 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+        Properties properties = new Properties()
+        properties.load(project.rootProject.file('local.properties').newDataInputStream())
+        buildConfigField "String[]", "apiKey", "{ ${generateKeyXorParts(properties.getProperty('apiKey')).collect {"\"${it}\""}.join(",") } }"
+        buildConfigField "String[]", "apiHash", "{ ${generateKeyXorParts(properties.getProperty('apiHash')).collect {"\"${it}\""}.join(",") } }"
     }
 
     buildTypes {
@@ -19,10 +24,6 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
-    }
-
-    dataBinding {
-        enabled = true
     }
 }
 
@@ -33,4 +34,20 @@ dependencies {
 
 repositories {
     mavenCentral()
+}
+
+static String[] generateKeyXorParts(String key) {
+    String[] keyParts = new String[2]
+
+    byte[] xorRandom = new byte[key.length()]
+    byte[] xorMatch = new byte[key.length()]
+    byte[] keyBytes = key.getBytes()
+    for (int i = 0; i < key.length(); i++) {
+        xorRandom[i] = (byte) (256 * Math.random())
+        xorMatch[i] = (byte) (xorRandom[i] ^ keyBytes[i])
+    }
+    keyParts[0] = xorRandom.encodeBase64().toString()
+    keyParts[1] = xorMatch.encodeBase64().toString()
+
+    return keyParts
 }

@@ -3,12 +3,14 @@ package space.naboo.telesam.view
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v4.content.ContextCompat
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
 import space.naboo.telesam.R
+import space.naboo.telesam.telegram.TelegramData
 import space.naboo.telesam.presenter.MainFragmentPresenter
 
 class MainFragment : Fragment(), MainFragmentView {
@@ -56,6 +58,12 @@ class MainFragment : Fragment(), MainFragmentView {
             okTextView.visibility = View.GONE
             requestPermissionButton.visibility = View.VISIBLE
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        Log.d(TAG, "api key: ${TelegramData.test()}")
     }
 }
 
