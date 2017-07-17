@@ -1,5 +1,12 @@
 <resources>
     <string name="app_name">Telesam</string>
-    <string name="grant_permission">Grant read SMS permission</string>
+    <string name="grant_permissions">Grant required permissions</string>
+    <string name="enter_phone_number">Enter phone number</string>
+    <string name="sign_in_to_telegram">Sign in to Telegram</string>
+    <string name="enter_telegram_code_here">Enter Telegram code</string>
+    <string name="select_telegram_group">Select telegram group to send SMS to</string>
+    <string name="ok">OK</string>
     <string name="ok_message">Your SMS messages will not be forwarded to Telegram</string>
+    <string name="unknown_group">UNKNOWN GROUP NAME</string>
+    <string name="new_message_template">New message from %1$s\n%2$s</string>
 </resources>

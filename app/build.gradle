@@ -3,11 +3,11 @@ apply plugin: 'kotlin-android'
 
 android {
     compileSdkVersion 25
-    buildToolsVersion "25.0.3"
+    buildToolsVersion "$rootProject.buildToolsVersion"
 
     defaultConfig {
         applicationId "space.naboo.telesam"
-        minSdkVersion 15
+        minSdkVersion 21
         targetSdkVersion 25
         versionCode 1
         versionName "1.0"
@@ -17,6 +17,12 @@ android {
         properties.load(project.rootProject.file('local.properties').newDataInputStream())
         buildConfigField "String[]", "apiKey", "{ ${generateKeyXorParts(properties.getProperty('apiKey')).collect {"\"${it}\""}.join(",") } }"
         buildConfigField "String[]", "apiHash", "{ ${generateKeyXorParts(properties.getProperty('apiHash')).collect {"\"${it}\""}.join(",") } }"
+
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments = ["room.schemaLocation": "$projectDir/schemas".toString()]
+            }
+        }
     }
 
     buildTypes {
@@ -25,11 +31,34 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    packagingOptions {
+        exclude 'META-INF/rxjava.properties'
+    }
 }
 
 dependencies {
-    compile 'com.android.support:appcompat-v7:25.4.0'
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
+    compile fileTree(include: ['*.jar'], dir: 'libs')
+
+    compile "com.android.support:appcompat-v7:$rootProject.supportLibVersion"
+    compile "com.android.support:recyclerview-v7:$rootProject.supportLibVersion"
+
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$rootProject.kotlin_version"
+
+    compile 'io.reactivex.rxjava2:rxjava:2.1.1'
+    compile 'io.reactivex.rxjava2:rxandroid:2.0.1'
+
+    compile "android.arch.lifecycle:runtime:$rootProject.archLifecycleVersion"
+    compile "android.arch.lifecycle:extensions:$rootProject.archLifecycleVersion"
+    kapt "android.arch.lifecycle:compiler:$rootProject.archLifecycleVersion"
+
+    compile "android.arch.persistence.room:runtime:$rootProject.archRoomVersion"
+    compile "android.arch.persistence.room:rxjava2:$rootProject.archRoomVersion"
+    kapt "android.arch.persistence.room:compiler:$rootProject.archRoomVersion"
+
+    // kotlogram deps
+    compile 'org.slf4j:slf4j-simple:1.7.21'
+    compile 'io.reactivex:rxjava:1.2.0'
 }
 
 repositories {

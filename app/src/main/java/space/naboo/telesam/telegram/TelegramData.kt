@@ -2,11 +2,18 @@ package space.naboo.telesam.telegram
 
 import android.os.Build
 import android.util.Base64
+import com.github.badoualy.telegram.api.TelegramApp
 import space.naboo.telesam.BuildConfig
 import space.naboo.telesam.MyApp
 import kotlin.experimental.xor
 
-object TelegramData {
+internal class TelegramData {
+
+    val apiKey
+        get() = getKey(BuildConfig.apiKey).toInt()
+
+    val apiHash
+        get() = getKey(BuildConfig.apiHash)
 
     val appVersion by lazy { BuildConfig.VERSION_NAME }
 
@@ -31,6 +38,9 @@ object TelegramData {
         }
     }
 
+    val telegramApp = TelegramApp(apiId = apiKey, apiHash = apiHash, deviceModel = model,
+            systemVersion = systemVersion, appVersion = appVersion, langCode = langCode)
+
     private fun getKey(key: Array<String>): String {
         val xorParts0 = Base64.decode(key[0], 0)
         val xorParts1 = Base64.decode(key[1], 0)
@@ -43,11 +53,4 @@ object TelegramData {
         return String(xorKey)
     }
 
-    fun apiKey(): Int {
-        return getKey(BuildConfig.apiKey).toInt()
-    }
-
-    fun apiHash(): String {
-        return getKey(BuildConfig.apiHash)
-    }
 }
