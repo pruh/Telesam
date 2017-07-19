@@ -29,11 +29,11 @@ internal class TelegramData {
 
     val systemVersion by lazy { "Android ${Build.VERSION.RELEASE}" }
 
+    @Suppress("DEPRECATION")
     val langCode: String by lazy {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             MyApp.instance.resources.configuration.locales.get(0).language
         } else {
-            //noinspection deprecation
             MyApp.instance.resources.configuration.locale.language
         }
     }

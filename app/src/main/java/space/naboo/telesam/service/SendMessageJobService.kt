@@ -26,9 +26,9 @@ class SendMessageJobService : JobService() {
     override fun onStartJob(params: JobParameters?): Boolean {
         Log.v(TAG, "onStartJob")
 
-        val groupId = Prefs().getGroupId()
+        val groupId = Prefs().groupId
 
-        if (groupId == null) {
+        if (groupId == 0) {
             Log.v(TAG, "group not yet set")
             return false
         }
@@ -43,10 +43,12 @@ class SendMessageJobService : JobService() {
                         val text = getString(R.string.new_message_template, sms.from, sms.message)
                         val tlAbsUpdates = MyApp.kotlogram.client.messagesSendMessage(true, false, false, false,
                                 TLInputPeerChat(groupId), null, text, Random().nextLong(), null, null)
-                        // todo check tlAbsUpdates
+
+                        Log.v(TAG, "message send result: $tlAbsUpdates")
                         MyApp.database.smsDao().delete(sms)
                     }
-                }.subscribeOn(Schedulers.io())
+                }
+                .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({}, {
                     Log.w(TAG, "Exception while sending messages", it)

@@ -1,31 +1,46 @@
 package space.naboo.telesam.view
 
+import android.content.DialogInterface
+import android.graphics.Typeface
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v4.content.ContextCompat
 import android.support.v4.content.PermissionChecker
+import android.support.v7.app.AlertDialog
+import android.text.Spannable
+import android.text.SpannableStringBuilder
+import android.text.style.StyleSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
-import com.github.badoualy.telegram.tl.api.TLAbsChat
 import space.naboo.telesam.R
+import space.naboo.telesam.model.Group
+import space.naboo.telesam.model.User
 import space.naboo.telesam.presenter.MainFragmentPresenter
 
-class MainFragment : Fragment(), MainFragmentView, GroupClickListener {
+class MainFragment : Fragment(), MainView, GroupClickListener {
 
     private val SELECT_GROUP_REQUEST_CODE = 1
 
     private val presenter by lazy { MainFragmentPresenter(this) }
+
     private val requestPermissionButton by lazy { view?.findViewById(R.id.request_permission_button) as Button }
+    private val permissionsOkText by lazy { view?.findViewById(R.id.permissions_ok) as View }
+    private val phoneNumberContainer by lazy { view?.findViewById(R.id.phone_number_container) as View }
     private val phoneNumberEditText by lazy { view?.findViewById(R.id.phone_number) as EditText }
     private val telegramSignInButton by lazy { view?.findViewById(R.id.telegram_sign_in) as Button }
-    private val selectGroupButton by lazy { view?.findViewById(R.id.select_telegram_group) as Button }
+    private val codeContainer by lazy { view?.findViewById(R.id.code_container) as View }
+    private val signInText by lazy { view?.findViewById(R.id.signed_in_text) as TextView }
+    private val signOutContainer by lazy { view?.findViewById(R.id.sign_out_container) as View }
+    private val logout by lazy { view?.findViewById(R.id.logout) as Button }
     private val codeFromTelegramEditText by lazy { view?.findViewById(R.id.telegram_code) as EditText }
     private val enterCodeButton by lazy { view?.findViewById(R.id.code_enter) as Button }
-    private val okTextView by lazy { view?.findViewById(R.id.text_view) as TextView }
+    private val selectGroupText by lazy { view?.findViewById(R.id.telegram_group) as TextView }
+    private val selectGroupButton by lazy { view?.findViewById(R.id.select_telegram_group) as Button }
+    private val groupContainer by lazy { view?.findViewById(R.id.group_container) as View }
 
     companion object {
         val TAG: String = MainFragment::class.java.simpleName
@@ -45,9 +60,10 @@ class MainFragment : Fragment(), MainFragmentView, GroupClickListener {
         // to init it here
         presenter
         requestPermissionButton.setOnClickListener { presenter.onGrantPermissionClick(it) }
-        selectGroupButton.setOnClickListener { presenter.onSelectGroupClick(it) }
+        selectGroupButton.setOnClickListener { presenter.loadGroups(it) }
         telegramSignInButton.setOnClickListener { presenter.onTelegramSignInClick(it, phoneNumberEditText.text) }
         enterCodeButton.setOnClickListener { presenter.onCodeEntered(it, codeFromTelegramEditText.text) }
+        logout.setOnClickListener { presenter.logout(it) }
     }
 
     override fun checkSelfPermission(permissions: Array<String>): Int {
@@ -68,35 +84,76 @@ class MainFragment : Fragment(), MainFragmentView, GroupClickListener {
         presenter.onPermissionResult(requestCode, permissions, grantResults)
     }
 
+    override fun onSignedIn(user: User) {
+        phoneNumberContainer.visibility = View.GONE
+        codeContainer.visibility = View.GONE
+
+        signOutContainer.visibility = View.VISIBLE
+        signInText.visibility = View.VISIBLE
+        signInText.text = getString(R.string.signed_in_text, user.firstName, user.lastName)
+        logout.visibility = View.VISIBLE
+
+        groupContainer.visibility = View.VISIBLE
+    }
+
+    override fun onSignedOut() {
+        phoneNumberContainer.visibility = View.VISIBLE
+        codeContainer.visibility = View.GONE
+
+        signOutContainer.visibility = View.GONE
+        signInText.visibility = View.GONE
+        logout.visibility = View.GONE
+
+        groupContainer.visibility = View.GONE
+    }
+
     override fun onPermissionGranted(permissionGranted: Boolean) {
         if (permissionGranted) {
-            okTextView.visibility = View.VISIBLE
+            permissionsOkText.visibility = View.VISIBLE
             requestPermissionButton.visibility = View.GONE
         } else {
-            okTextView.visibility = View.GONE
+            permissionsOkText.visibility = View.GONE
             requestPermissionButton.visibility = View.VISIBLE
         }
     }
 
     override fun onCodeRequested() {
-
+        phoneNumberContainer.visibility = View.GONE
+        codeContainer.visibility = View.VISIBLE
     }
 
-    override fun onGroupsAvailable(groups: List<TLAbsChat>) {
+    override fun onGroupsAvailable(groups: List<Group>) {
         val f = GroupPickDialogFragment.newInstance(groups)
         f.setTargetFragment(this, SELECT_GROUP_REQUEST_CODE)
         f.show(childFragmentManager, GroupPickDialogFragment.TAG)
     }
 
-    override fun onGroupClick(group: TLAbsChat) {
-        presenter.onGroupClick(group)
+    override fun onGroupSelected(group: Group?) {
+        if (group != null) {
+            selectGroupText.visibility = View.VISIBLE
+
+            val ssb = SpannableStringBuilder()
+                    .append(getString(R.string.group_set_message))
+                    .append(" ")
+                    .append(group.name, StyleSpan(Typeface.BOLD), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+            selectGroupText.text = ssb
+
+            selectGroupButton.text = getString(R.string.select_another_telegram_group)
+        } else {
+            selectGroupText.visibility = View.GONE
+            selectGroupButton.text = getString(R.string.select_telegram_group)
+        }
     }
 }
 
-interface MainFragmentView {
+interface MainView {
     fun checkSelfPermission(permissions: Array<String>): Int
     fun requestPermissions(permissionList: Array<String>, requestCode: Int)
     fun onPermissionGranted(permissionGranted: Boolean)
     fun onCodeRequested()
-    fun onGroupsAvailable(groups: List<TLAbsChat>)
+    fun onGroupsAvailable(groups: List<Group>)
+    fun onSignedIn(user: User)
+    fun onSignedOut()
+    fun onGroupSelected(group: Group?)
 }

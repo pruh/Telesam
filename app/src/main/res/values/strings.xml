@@ -4,9 +4,16 @@
     <string name="enter_phone_number">Enter phone number</string>
     <string name="sign_in_to_telegram">Sign in to Telegram</string>
     <string name="enter_telegram_code_here">Enter Telegram code</string>
-    <string name="select_telegram_group">Select telegram group to send SMS to</string>
+    <string name="select_telegram_group_full">Select telegram group to send SMS to</string>
+    <string name="select_telegram_group">Select telegram group</string>
+    <string name="select_another_telegram_group">Select another telegram group</string>
     <string name="ok">OK</string>
-    <string name="ok_message">Your SMS messages will not be forwarded to Telegram</string>
-    <string name="unknown_group">UNKNOWN GROUP NAME</string>
+    <string name="group_set_message">Your SMS messages will be forwarded to:</string>
     <string name="new_message_template">New message from %1$s\n%2$s</string>
+    <string name="step_1">Step 1: Grant permissions</string>
+    <string name="step_2">Step 2: Sign in to Telegram</string>
+    <string name="step_3">Step 3: Select Telegram group</string>
+    <string name="permissions_granted">Permissions granted</string>
+    <string name="logout">Logout</string>
+    <string name="signed_in_text">You\'re signed in as %1$s %2$s</string>
 </resources>

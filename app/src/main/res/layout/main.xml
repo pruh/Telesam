@@ -1,63 +1,139 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:gravity="center"
-    android:orientation="vertical">
+    android:layout_height="match_parent">
 
-    <Button
-        android:id="@+id/request_permission_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/grant_permissions" />
-
-    <LinearLayout
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center">
+        android:animateLayoutChanges="true"
+        android:orientation="vertical"
+        android:paddingEnd="12dp"
+        android:paddingStart="12dp">
 
-        <EditText
-            android:id="@+id/phone_number"
-            android:layout_width="wrap_content"
+        <TextView
+            style="?android:attr/listSeparatorTextViewStyle"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/enter_phone_number"
-            android:inputType="phone" />
+            android:layout_marginTop="20dp"
+            android:text="@string/step_1"/>
 
         <Button
-            android:id="@+id/telegram_sign_in"
-            android:layout_width="wrap_content"
+            android:id="@+id/request_permission_button"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/sign_in_to_telegram" />
+            android:text="@string/grant_permissions"/>
+
+        <TextView
+            android:id="@+id/permissions_ok"
+            style="@style/Label"
+            android:layout_width="match_parent"
+            android:text="@string/permissions_granted"/>
+
+        <TextView
+            style="?android:attr/listSeparatorTextViewStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/step_2"/>
+
+        <LinearLayout
+            android:id="@+id/phone_number_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <android.support.design.widget.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp">
+
+                <EditText
+                    android:id="@+id/phone_number"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:maxLines="1"
+                    android:hint="@string/enter_phone_number"
+                    android:inputType="phone"/>
+            </android.support.design.widget.TextInputLayout>
+
+            <Button
+                android:id="@+id/telegram_sign_in"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/sign_in_to_telegram"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/code_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <android.support.design.widget.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp">
+
+                <EditText
+                    android:id="@+id/telegram_code"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:maxLines="1"
+                    android:hint="@string/enter_telegram_code_here"/>
+            </android.support.design.widget.TextInputLayout>
+
+            <Button
+                android:id="@+id/code_enter"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/ok"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/sign_out_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/signed_in_text"
+                style="@style/Label"
+                android:layout_width="match_parent"
+                android:text="@string/signed_in_text"/>
+
+            <Button
+                android:id="@+id/logout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/logout"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/group_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                style="?android:attr/listSeparatorTextViewStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="@string/step_3"/>
+
+            <TextView
+                android:id="@+id/telegram_group"
+                style="@style/Label"
+                android:layout_width="match_parent"
+                android:text="@string/group_set_message"/>
+
+            <Button
+                android:id="@+id/select_telegram_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/select_telegram_group_full"/>
+        </LinearLayout>
+
     </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center">
-
-        <EditText
-            android:id="@+id/telegram_code"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:hint="@string/enter_telegram_code_here" />
-
-        <Button
-            android:id="@+id/code_enter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/ok"/>
-    </LinearLayout>
-
-    <Button
-        android:id="@+id/select_telegram_group"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/select_telegram_group" />
-
-    <TextView
-        android:id="@+id/text_view"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/ok_message" />
-
-</LinearLayout>
+</ScrollView>

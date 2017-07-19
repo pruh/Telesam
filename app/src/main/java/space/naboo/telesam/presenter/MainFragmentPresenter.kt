@@ -4,20 +4,23 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.util.Log
 import android.view.View
-import com.github.badoualy.telegram.tl.api.TLAbsChat
-import com.github.badoualy.telegram.tl.api.TLInputPeerEmpty
+import com.github.badoualy.telegram.tl.api.*
 import com.github.badoualy.telegram.tl.api.auth.TLAuthorization
 import com.github.badoualy.telegram.tl.api.auth.TLSentCode
 import com.github.badoualy.telegram.tl.api.messages.TLAbsDialogs
+import com.github.badoualy.telegram.tl.core.TLBool
+import com.github.badoualy.telegram.tl.exception.RpcErrorException
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.plugins.RxJavaPlugins
 import io.reactivex.schedulers.Schedulers
 import space.naboo.telesam.MyApp
 import space.naboo.telesam.Prefs
-import space.naboo.telesam.view.MainFragmentView
+import space.naboo.telesam.model.Group
+import space.naboo.telesam.model.User
+import space.naboo.telesam.view.MainView
 
-class MainFragmentPresenter(val mainView: MainFragmentView) {
+class MainFragmentPresenter(val mainView: MainView) {
 
     private val TAG: String = MainFragmentPresenter::class.java.simpleName
 
@@ -27,6 +30,44 @@ class MainFragmentPresenter(val mainView: MainFragmentView) {
 
     private var phoneNumber: String? = null
     private var sentCode: TLSentCode? = null
+
+    init {
+        val grant = mainView.checkSelfPermission(permissions)
+        if (grant == PackageManager.PERMISSION_GRANTED) {
+            mainView.onPermissionGranted(true)
+        } else {
+            mainView.onPermissionGranted(false)
+        }
+
+        val prefs = Prefs()
+
+        checkAuthorization()
+
+        prefs.groupId.let {
+            if (it != 0) {
+                fetchGroup(it)
+            } else {
+                mainView.onGroupSelected(null)
+            }
+        }
+
+        RxJavaPlugins.setErrorHandler { e ->
+            Log.w(TAG, "Handled some error", e)
+        }
+    }
+
+    private fun fetchGroup(groupId: Int) {
+        getLoadGroupsObservable()
+                .map { it.first { it.id == groupId } }
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    Log.v(TAG, "Group fetch result: $it")
+                    mainView.onGroupSelected(it)
+                }, {
+                    Log.e(TAG, "Error while fetching groups", it)
+                })
+    }
 
     fun onGrantPermissionClick(view: View) {
         if (mainView.checkSelfPermission(permissions) != PackageManager.PERMISSION_GRANTED) {
@@ -44,31 +85,9 @@ class MainFragmentPresenter(val mainView: MainFragmentView) {
         }
     }
 
-    init {
-        val grant = mainView.checkSelfPermission(permissions)
-        if (grant == PackageManager.PERMISSION_GRANTED) {
-            mainView.onPermissionGranted(true)
-        } else {
-            mainView.onPermissionGranted(false)
-        }
-
-        RxJavaPlugins.setErrorHandler { e ->
-            Log.w(TAG, "Handled some error", e)
-        }
-    }
-
     fun onTelegramSignInClick(view: View, phoneNumber: CharSequence) {
-        Observable.create<TLSentCode> {
-            val client = MyApp.kotlogram.client
-
-            try {
-                it.onNext(client.authSendCode(false, phoneNumber.toString(), true))
-
-                // todo always ok to proceed?
-            } catch (e: Exception) {
-                it.onError(e)
-            }
-        }
+        Observable.create<TLSentCode> { it.onNext(MyApp.kotlogram.client
+                .authSendCode(false, phoneNumber.toString(), true)) }
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
@@ -86,41 +105,24 @@ class MainFragmentPresenter(val mainView: MainFragmentView) {
 
     fun onCodeEntered(view: View, code: CharSequence) {
         sentCode?.let { sentCode ->
-            Observable.create<TLAuthorization> {
-                val client = MyApp.kotlogram.client
-
-                try {
-                    // Auth with the received code
-                    it.onNext(client.authSignIn(phoneNumber, sentCode.phoneCodeHash, code.toString()))
-                } catch (e: Exception) {
-                    it.onError(e)
-                }
-            }
+            Observable.create<TLAuthorization> { it.onNext(MyApp.kotlogram.client
+                    .authSignIn(phoneNumber, sentCode.phoneCodeHash, code.toString())) }
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({
                         Log.v(TAG, "Sign in result: $it")
 
-                        val self = it.user.asUser
-                        Log.v(TAG, "You are now signed in as " + self.firstName + " " + self.lastName + " @" + self.username)
+                        Prefs().isSignedIn = true
+
+                        mainView.onSignedIn(createUser(it.user.asUser))
                     }, {
                         Log.e(TAG, "Error while singing in", it)
                     })
         } ?: return
     }
 
-    fun onSelectGroupClick(view: View) {
-        Observable.create<TLAbsDialogs> {
-            val client = MyApp.kotlogram.client
-
-            try {
-                // Auth with the received code
-                it.onNext(client.messagesGetDialogs(false, 0, 0, TLInputPeerEmpty(), 100500))
-            } catch (e: Exception) {
-                it.onError(e)
-            }
-        }
-                .map { it.chats }
+    fun loadGroups(view: View) {
+        getLoadGroupsObservable()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
@@ -132,10 +134,51 @@ class MainFragmentPresenter(val mainView: MainFragmentView) {
                 })
     }
 
-    fun onGroupClick(group: TLAbsChat) {
-        Log.v(TAG, "Group click: $group")
-
-        Prefs().saveGroupId(group.id)
+    private fun getLoadGroupsObservable(): Observable<List<Group>> {
+        return Observable.create<TLAbsDialogs> { it.onNext(MyApp.kotlogram.client
+                    .messagesGetDialogs(false, 0, 0, TLInputPeerEmpty(), 100500)) }
+                .map { it.chats
+                        .filterIsInstance<TLChat>()
+                        .map { Group(it.id, it.title) } }
     }
-}
 
+    fun logout(view: View) {
+        Observable.create<TLBool> { it.onNext(MyApp.kotlogram.client.authLogOut()) }
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    Log.v(TAG, "Get dialogs result: $it")
+
+                    val prefs = Prefs()
+                    prefs.groupId = 0
+                    prefs.isSignedIn = false
+
+                    mainView.onSignedOut()
+                }, {
+                    Log.e(TAG, "Error while logging out", it)
+                })
+    }
+
+    private fun checkAuthorization() {
+        Observable.create<TLUserFull> { it.onNext(MyApp.kotlogram.client.usersGetFullUser(TLInputUserSelf())) }
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    Log.v(TAG, "Authorization result: $it")
+
+                    mainView.onSignedIn(createUser(it.user.asUser))
+                }, {
+                    if (it is RpcErrorException && it.code == 401) {
+                        Log.v(TAG, "User not authorized")
+                        mainView.onSignedOut()
+                    } else {
+                        Log.e(TAG, "Error while checking authorization", it)
+                    }
+                })
+    }
+
+    private fun createUser(user: TLUser): User {
+        return User(user.firstName, user.lastName)
+    }
+
+}
