@@ -2,7 +2,6 @@ package space.naboo.telesam.service
 
 import android.app.job.JobParameters
 import android.app.job.JobService
-import android.util.Log
 import com.github.badoualy.telegram.tl.api.TLInputPeerChat
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
@@ -10,11 +9,10 @@ import io.reactivex.schedulers.Schedulers
 import space.naboo.telesam.MyApp
 import space.naboo.telesam.Prefs
 import space.naboo.telesam.R
+import timber.log.Timber
 import java.util.*
 
 class SendMessageJobService : JobService() {
-
-    private val TAG: String = SendMessageJobService::class.java.simpleName
 
     companion object {
         val JOB_ID = 1
@@ -24,12 +22,12 @@ class SendMessageJobService : JobService() {
     @Volatile private var cancel = false
 
     override fun onStartJob(params: JobParameters?): Boolean {
-        Log.v(TAG, "onStartJob")
+        Timber.v("onStartJob")
 
         val groupId = Prefs().groupId
 
         if (groupId == 0) {
-            Log.v(TAG, "group not yet set")
+            Timber.v("group not yet set")
             return false
         }
 
@@ -44,17 +42,17 @@ class SendMessageJobService : JobService() {
                         val tlAbsUpdates = MyApp.kotlogram.client.messagesSendMessage(true, false, false, false,
                                 TLInputPeerChat(groupId), null, text, Random().nextLong(), null, null)
 
-                        Log.v(TAG, "message send result: $tlAbsUpdates")
+                        Timber.v("message send result: $tlAbsUpdates")
                         MyApp.database.smsDao().delete(sms)
                     }
                 }
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({}, {
-                    Log.w(TAG, "Exception while sending messages", it)
+                    Timber.w(it)
                     jobFinished(params, true)
                 }, {
-                    Log.v(TAG, "All messages sent")
+                    Timber.v("All messages sent")
                     jobFinished(params, false)
                 })
 
@@ -62,7 +60,7 @@ class SendMessageJobService : JobService() {
     }
 
     override fun onStopJob(params: JobParameters?): Boolean {
-        Log.v(TAG, "onStopJob")
+        Timber.v("onStopJob")
 
         disposable?.let {
             if (it.isDisposed) {

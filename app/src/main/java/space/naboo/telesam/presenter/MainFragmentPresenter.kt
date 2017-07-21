@@ -2,7 +2,6 @@ package space.naboo.telesam.presenter
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.util.Log
 import android.view.View
 import com.github.badoualy.telegram.tl.api.*
 import com.github.badoualy.telegram.tl.api.auth.TLAuthorization
@@ -19,10 +18,9 @@ import space.naboo.telesam.Prefs
 import space.naboo.telesam.model.Group
 import space.naboo.telesam.model.User
 import space.naboo.telesam.view.MainView
+import timber.log.Timber
 
 class MainFragmentPresenter(val mainView: MainView) {
-
-    private val TAG: String = MainFragmentPresenter::class.java.simpleName
 
     private val PERMISSION_REQ_CODE = 1
 
@@ -52,7 +50,7 @@ class MainFragmentPresenter(val mainView: MainView) {
         }
 
         RxJavaPlugins.setErrorHandler { e ->
-            Log.w(TAG, "Handled some error", e)
+            Timber.w(e)
         }
     }
 
@@ -62,10 +60,10 @@ class MainFragmentPresenter(val mainView: MainView) {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
-                    Log.v(TAG, "Group fetch result: $it")
+                    Timber.v("Group fetch result: $it")
                     mainView.onGroupSelected(it)
                 }, {
-                    Log.e(TAG, "Error while fetching groups", it)
+                    Timber.e(it)
                 })
     }
 
@@ -91,12 +89,12 @@ class MainFragmentPresenter(val mainView: MainView) {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
-                    Log.v(TAG, "Code request result: $it")
+                    Timber.v("Code request result: $it")
                     this.phoneNumber = phoneNumber.toString()
                     sentCode = it
                     mainView.onCodeRequested()
                 }, {
-                    Log.e(TAG, "Error while requesting code", it)
+                    Timber.e(it)
 
                     this.phoneNumber = null
                     sentCode = null
@@ -110,13 +108,13 @@ class MainFragmentPresenter(val mainView: MainView) {
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({
-                        Log.v(TAG, "Sign in result: $it")
+                        Timber.v("Sign in result: $it")
 
                         Prefs().isSignedIn = true
 
                         mainView.onSignedIn(createUser(it.user.asUser))
                     }, {
-                        Log.e(TAG, "Error while singing in", it)
+                        Timber.e(it)
                     })
         } ?: return
     }
@@ -126,11 +124,11 @@ class MainFragmentPresenter(val mainView: MainView) {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
-                    Log.v(TAG, "Get dialogs result: $it")
+                    Timber.v("Get dialogs result: $it")
 
                     mainView.onGroupsAvailable(it)
                 }, {
-                    Log.e(TAG, "Error while getting dialogs", it)
+                    Timber.e(it)
                 })
     }
 
@@ -147,7 +145,7 @@ class MainFragmentPresenter(val mainView: MainView) {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
-                    Log.v(TAG, "Get dialogs result: $it")
+                    Timber.v("Get dialogs result: $it")
 
                     val prefs = Prefs()
                     prefs.groupId = 0
@@ -155,7 +153,7 @@ class MainFragmentPresenter(val mainView: MainView) {
 
                     mainView.onSignedOut()
                 }, {
-                    Log.e(TAG, "Error while logging out", it)
+                    Timber.e(it)
                 })
     }
 
@@ -164,15 +162,15 @@ class MainFragmentPresenter(val mainView: MainView) {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
-                    Log.v(TAG, "Authorization result: $it")
+                    Timber.v("Authorization result: $it")
 
                     mainView.onSignedIn(createUser(it.user.asUser))
                 }, {
                     if (it is RpcErrorException && it.code == 401) {
-                        Log.v(TAG, "User not authorized")
+                        Timber.v("User not authorized")
                         mainView.onSignedOut()
                     } else {
-                        Log.e(TAG, "Error while checking authorization", it)
+                        Timber.e(it)
                     }
                 })
     }

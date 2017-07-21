@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.support.v4.app.DialogFragment
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,6 +13,7 @@ import android.widget.TextView
 import space.naboo.telesam.Prefs
 import space.naboo.telesam.R
 import space.naboo.telesam.model.Group
+import timber.log.Timber
 
 class GroupPickDialogFragment : DialogFragment() {
 
@@ -46,7 +46,7 @@ class GroupPickDialogFragment : DialogFragment() {
         recyclerView.setHasFixedSize(true)
         recyclerView.adapter = GroupsAdapter(arguments.getParcelableArrayList<Group>(GROUPS_KEY), object : GroupClickListener {
             override fun onGroupSelected(group: Group?) {
-                Log.v(TAG, "selected group: $group")
+                Timber.v("selected group: $group")
 
                 dismiss()
 

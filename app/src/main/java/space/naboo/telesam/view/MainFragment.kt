@@ -1,12 +1,10 @@
 package space.naboo.telesam.view
 
-import android.content.DialogInterface
 import android.graphics.Typeface
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v4.content.ContextCompat
 import android.support.v4.content.PermissionChecker
-import android.support.v7.app.AlertDialog
 import android.text.Spannable
 import android.text.SpannableStringBuilder
 import android.text.style.StyleSpan

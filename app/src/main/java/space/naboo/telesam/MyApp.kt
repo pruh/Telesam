@@ -1,9 +1,12 @@
 package space.naboo.telesam
 
 import android.app.Application
+import android.content.Context
 import space.naboo.telesam.db.AppDatabase
 import space.naboo.telesam.db.DatabaseHelper
 import space.naboo.telesam.telegram.KotlogramWrapper
+import timber.log.Timber
+
 
 class MyApp : Application() {
 
@@ -22,8 +25,21 @@ class MyApp : Application() {
         super.onCreate()
 
         instance = this
+
+        initTimber(this)
+
         database = DatabaseHelper(this).appDatabase
         kotlogram = KotlogramWrapper()
+    }
+
+    private fun initTimber(context: Context) {
+        if (BuildConfig.DEBUG) {
+            Timber.plant(Timber.DebugTree())
+
+            // todo add some persistent tree that I can check, like rolling file appender
+        } else {
+            // todo plant Production Tree
+        }
     }
 
 }
