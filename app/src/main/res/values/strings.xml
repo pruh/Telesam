@@ -16,4 +16,5 @@
     <string name="permissions_granted">Permissions granted</string>
     <string name="logout">Logout</string>
     <string name="signed_in_text">You\'re signed in as %1$s %2$s</string>
+    <string name="allow_to_run_in_background">Allow the app to run in background</string>
 </resources>

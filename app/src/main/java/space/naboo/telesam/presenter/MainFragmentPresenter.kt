@@ -37,6 +37,8 @@ class MainFragmentPresenter(val mainView: MainView) {
             mainView.onPermissionGranted(false)
         }
 
+        mainView.onBackgroundModeEnabled(mainView.isBackgroundModeEnabled())
+
         val prefs = Prefs()
 
         checkAuthorization()
@@ -52,6 +54,11 @@ class MainFragmentPresenter(val mainView: MainView) {
         RxJavaPlugins.setErrorHandler { e ->
             Timber.w(e)
         }
+    }
+
+    fun onForeground() {
+        // need to check background moe as there is no callback
+        mainView.onBackgroundModeEnabled(mainView.isBackgroundModeEnabled())
     }
 
     private fun fetchGroup(groupId: Int) {

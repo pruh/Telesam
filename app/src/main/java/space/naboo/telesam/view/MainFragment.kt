@@ -1,7 +1,13 @@
 package space.naboo.telesam.view
 
+import android.content.Context
+import android.content.Intent
 import android.graphics.Typeface
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
+import android.provider.Settings
 import android.support.v4.app.Fragment
 import android.support.v4.content.ContextCompat
 import android.support.v4.content.PermissionChecker
@@ -18,6 +24,7 @@ import space.naboo.telesam.R
 import space.naboo.telesam.model.Group
 import space.naboo.telesam.model.User
 import space.naboo.telesam.presenter.MainFragmentPresenter
+
 
 class MainFragment : Fragment(), MainView, GroupClickListener {
 
@@ -39,6 +46,7 @@ class MainFragment : Fragment(), MainView, GroupClickListener {
     private val selectGroupText by lazy { view?.findViewById(R.id.telegram_group) as TextView }
     private val selectGroupButton by lazy { view?.findViewById(R.id.select_telegram_group) as Button }
     private val groupContainer by lazy { view?.findViewById(R.id.group_container) as View }
+    private val allowInBackgroundButton by lazy { view?.findViewById(R.id.allow_in_background) as Button }
 
     companion object {
         val TAG: String = MainFragment::class.java.simpleName
@@ -55,13 +63,25 @@ class MainFragment : Fragment(), MainView, GroupClickListener {
     override fun onViewCreated(view: View?, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // to init it here
-        presenter
+        presenter // init presenter
         requestPermissionButton.setOnClickListener { presenter.onGrantPermissionClick(it) }
+        allowInBackgroundButton.setOnClickListener {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                val context = it.context
+                val packageName = context.packageName
+                startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:" + packageName)))
+            }
+        }
         selectGroupButton.setOnClickListener { presenter.loadGroups(it) }
         telegramSignInButton.setOnClickListener { presenter.onTelegramSignInClick(it, phoneNumberEditText.text) }
         enterCodeButton.setOnClickListener { presenter.onCodeEntered(it, codeFromTelegramEditText.text) }
         logout.setOnClickListener { presenter.logout(it) }
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        presenter.onForeground()
     }
 
     override fun checkSelfPermission(permissions: Array<String>): Int {
@@ -143,6 +163,21 @@ class MainFragment : Fragment(), MainView, GroupClickListener {
             selectGroupButton.text = getString(R.string.select_telegram_group)
         }
     }
+
+    override fun isBackgroundModeEnabled(): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val context = activity
+            val packageName = context.packageName
+            val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+            return pm.isIgnoringBatteryOptimizations(packageName)
+        } else {
+            return true
+        }
+    }
+
+    override fun onBackgroundModeEnabled(enabled: Boolean) {
+        allowInBackgroundButton.visibility = if (enabled) View.GONE else View.VISIBLE
+    }
 }
 
 interface MainView {
@@ -154,4 +189,6 @@ interface MainView {
     fun onSignedIn(user: User)
     fun onSignedOut()
     fun onGroupSelected(group: Group?)
+    fun isBackgroundModeEnabled(): Boolean
+    fun onBackgroundModeEnabled(enabled: Boolean)
 }
