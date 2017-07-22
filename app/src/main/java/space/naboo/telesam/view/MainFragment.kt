@@ -69,7 +69,9 @@ class MainFragment : Fragment(), MainView, GroupClickListener {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 val context = it.context
                 val packageName = context.packageName
-                startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:" + packageName)))
+                val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                        Uri.parse("package:" + packageName))
+                startActivity(intent)
             }
         }
         selectGroupButton.setOnClickListener { presenter.loadGroups(it) }
@@ -165,14 +167,17 @@ class MainFragment : Fragment(), MainView, GroupClickListener {
     }
 
     override fun isBackgroundModeEnabled(): Boolean {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val context = activity
-            val packageName = context.packageName
-            val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
-            return pm.isIgnoringBatteryOptimizations(packageName)
-        } else {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return true
+
+        val context = activity
+        val packageName = context.packageName
+        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:" + packageName))
+        if (intent.resolveActivity(context.packageManager) == null) {
             return true
         }
+
+        val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+        return pm.isIgnoringBatteryOptimizations(packageName)
     }
 
     override fun onBackgroundModeEnabled(enabled: Boolean) {
