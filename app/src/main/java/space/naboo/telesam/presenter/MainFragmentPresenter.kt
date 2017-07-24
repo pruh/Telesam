@@ -9,10 +9,10 @@ import com.github.badoualy.telegram.tl.api.auth.TLSentCode
 import com.github.badoualy.telegram.tl.api.messages.TLAbsDialogs
 import com.github.badoualy.telegram.tl.core.TLBool
 import com.github.badoualy.telegram.tl.exception.RpcErrorException
-import io.reactivex.MaybeObserver
+import io.reactivex.Maybe
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.Disposable
+import io.reactivex.functions.BiFunction
 import io.reactivex.plugins.RxJavaPlugins
 import io.reactivex.schedulers.Schedulers
 import space.naboo.telesam.MyApp
@@ -41,38 +41,50 @@ class MainFragmentPresenter(val mainView: MainView) {
 
         mainView.onBackgroundModeEnabled(mainView.isBackgroundModeEnabled())
 
-        // todo combine 2nd and do only if first is ok
-        checkAuthorization()
-        checkSelectedDialog()
+        fetchAllTelegramData()
 
         RxJavaPlugins.setErrorHandler { e ->
             Timber.w(e, "Caught global exception")
         }
     }
 
-    /**
-     * Check saved dialog in database and return info about it to main view.
-     */
-    private fun checkSelectedDialog() {
-        MyApp.database.dialogDao().load()
+    private fun fetchAllTelegramData() {
+        val NO_DIALOG = Dialog()
+        Maybe.create<TLUserFull> { it.onSuccess(MyApp.kotlogram.client.usersGetFullUser(TLInputUserSelf())) }
+                .zipWith(MyApp.database.dialogDao().load().defaultIfEmpty(NO_DIALOG),
+                        BiFunction<TLUserFull, Dialog, Pair<TLUserFull, Dialog?>> { user, dialog ->
+                            if (NO_DIALOG == dialog) {
+                                Pair(user, null)
+                            } else {
+                                Pair(user, dialog)
+                            }
+                        })
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribeWith(object : MaybeObserver<Dialog> {
-                    override fun onSubscribe(d: Disposable) {}
+                .subscribe({ (user, dialog) ->
+                    Timber.d("Authorization result: $user")
 
-                    override fun onSuccess(dialog: Dialog) {
+                    mainView.onSignedIn(createUser(user.user.asUser))
+
+                    if (dialog != null) {
                         Timber.d("Dialog check result: $dialog")
                         mainView.onDialogSelected(dialog)
-                    }
-
-                    override fun onError(e: Throwable) {
-                        Timber.e(e, "Exception while checking dialog")
-                    }
-
-                    override fun onComplete() {
+                    } else {
                         Timber.d("No dialog selected yet")
                         mainView.onDialogSelected(null)
                     }
+                }, {
+                    if (it is RpcErrorException && it.code == 401) {
+                        Timber.d("User not authorized")
+                        mainView.onSignedOut()
+
+                        Timber.d("No dialog selected yet")
+                        mainView.onDialogSelected(null)
+                    } else {
+                        Timber.e(it, "Exception when checking authorization")
+                    }
+                }, {
+                    Timber.d("fetchAllTelegramData complete")
                 })
     }
 
@@ -233,24 +245,6 @@ class MainFragmentPresenter(val mainView: MainView) {
                     mainView.onSignedOut()
                 }, {
                     Timber.e(it, "Exception during logout")
-                })
-    }
-
-    private fun checkAuthorization() {
-        Observable.create<TLUserFull> { it.onNext(MyApp.kotlogram.client.usersGetFullUser(TLInputUserSelf())) }
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({
-                    Timber.d("Authorization result: $it")
-
-                    mainView.onSignedIn(createUser(it.user.asUser))
-                }, {
-                    if (it is RpcErrorException && it.code == 401) {
-                        Timber.d("User not authorized")
-                        mainView.onSignedOut()
-                    } else {
-                        Timber.e(it, "Exception when checking authorization")
-                    }
                 })
     }
 
