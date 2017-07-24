@@ -13,7 +13,7 @@ class KotlogramWrapper {
 
     /** do no access this from main thread as Kotlogram makes network request in constructor */
     val client by lazy {
-        Timber.v("kotlogram client created")
+        Timber.d("kotlogram client created")
         Kotlogram.getDefaultClient(telegramData.telegramApp, apiStorage, preferredDataCenter = prodDc)
     }
 

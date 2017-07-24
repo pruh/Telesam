@@ -50,7 +50,7 @@ class GroupPickDialogFragment : DialogFragment() {
         recyclerView.setHasFixedSize(true)
         recyclerView.adapter = GroupsAdapter(arguments.getParcelableArrayList<Dialog>(DIALOGS_KEY), object : DialogClickListener {
             override fun onDialogSelected(dialog: Dialog) {
-                Timber.v("selected dialog: $dialog")
+                Timber.d("selected dialog: $dialog")
 
                 storeSelectedDialog(dialog)
                 (targetFragment as MainView).onDialogSelected(dialog)

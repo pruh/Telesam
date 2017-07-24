@@ -9,7 +9,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.PowerManager
 import android.provider.Telephony
-import io.reactivex.Observable
+import io.reactivex.Maybe
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import space.naboo.telesam.MyApp
@@ -29,7 +29,7 @@ class SmsReceiver : BroadcastReceiver() {
 
         val messages = reamMessages(intent)
 
-        scheduleSending(context, messages)
+        saveMessages(context, messages)
     }
 
     private fun reamMessages(intent: Intent): List<Sms> {
@@ -39,35 +39,44 @@ class SmsReceiver : BroadcastReceiver() {
                 .toList()
     }
 
-    private fun scheduleSending(context: Context, messages: List<Sms>) {
+    private fun saveMessages(context: Context, messages: List<Sms>) {
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.M) {
             val ps = context.getSystemService(Context.POWER_SERVICE) as PowerManager
-            Timber.v("isDeviceIdleMode: ${ps.isDeviceIdleMode}")
+            Timber.d("isDeviceIdleMode: ${ps.isDeviceIdleMode}")
         }
 
-        Observable.create<Unit> {
-            Timber.v("Saving message to database")
+        Maybe.fromCallable<Int> {
             if (MyApp.database.dialogDao().count() > 0) {
-                it.onNext(MyApp.database.smsDao().insertAll(messages))
-            }
-        }.subscribeOn(Schedulers.io())
+                Timber.d("Saving message to database")
+                MyApp.database.smsDao().insertAll(messages)
+                messages.count()
+            } else {
+                Timber.d("No dialog saved yet, skip current message(s)")
+                null
+            }}
+                .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
-                    // todo only on actual save
-                    Timber.v("Scheduling job")
-                    val jobScheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
-                    val result = jobScheduler.schedule(
-                            JobInfo.Builder(SendMessageJobService.JOB_ID, ComponentName(context, SendMessageJobService::class.java))
-                                    .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
-                                    .setPersisted(true)
-                                    .build())
-
-                    if (result != JobScheduler.RESULT_SUCCESS) {
-                        Timber.w("Failed to schedule SMS send")
-                    }
+                    scheduleJob(context)
                 }, {
                     Timber.w(it, "Exception while saving messages to database")
+                }, {
+                    Timber.d("No messages saved, do not schedule a job")
                 })
+    }
+
+    private fun scheduleJob(context: Context) {
+        Timber.d("Scheduling job")
+        val jobScheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
+        val result = jobScheduler.schedule(
+                JobInfo.Builder(SendMessageJobService.JOB_ID, ComponentName(context, SendMessageJobService::class.java))
+                        .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                        .setPersisted(true)
+                        .build())
+
+        if (result != JobScheduler.RESULT_SUCCESS) {
+            Timber.w("Failed to schedule SMS send")
+        }
     }
 
 }

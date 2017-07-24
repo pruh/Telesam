@@ -46,7 +46,7 @@ class MainFragmentPresenter(val mainView: MainView) {
         checkSelectedDialog()
 
         RxJavaPlugins.setErrorHandler { e ->
-            Timber.w(e)
+            Timber.w(e, "Caught global exception")
         }
     }
 
@@ -103,7 +103,7 @@ class MainFragmentPresenter(val mainView: MainView) {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
-                    Timber.v("Code request result: $it")
+                    Timber.d("Code request result: $it")
                     this.phoneNumber = phoneNumber.toString()
                     sentCode = it
                     mainView.onCodeRequested()
@@ -122,7 +122,7 @@ class MainFragmentPresenter(val mainView: MainView) {
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({
-                        Timber.v("Sign in result: $it")
+                        Timber.d("Sign in result: $it")
 
                         Prefs().isSignedIn = true
 
@@ -138,7 +138,7 @@ class MainFragmentPresenter(val mainView: MainView) {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
-                    Timber.v("Get dialogs result: $it")
+                    Timber.d("Get dialogs result: $it")
 
                     mainView.onDialogsAvailable(it)
                 }, {
@@ -225,7 +225,7 @@ class MainFragmentPresenter(val mainView: MainView) {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
-                    Timber.v("Get dialogs result: $it")
+                    Timber.d("Get dialogs result: $it")
 
                     val prefs = Prefs()
                     prefs.isSignedIn = false
@@ -241,12 +241,12 @@ class MainFragmentPresenter(val mainView: MainView) {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
-                    Timber.v("Authorization result: $it")
+                    Timber.d("Authorization result: $it")
 
                     mainView.onSignedIn(createUser(it.user.asUser))
                 }, {
                     if (it is RpcErrorException && it.code == 401) {
-                        Timber.v("User not authorized")
+                        Timber.d("User not authorized")
                         mainView.onSignedOut()
                     } else {
                         Timber.e(it, "Exception when checking authorization")

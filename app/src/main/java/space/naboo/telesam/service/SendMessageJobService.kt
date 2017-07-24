@@ -24,7 +24,7 @@ class SendMessageJobService : JobService() {
     @Volatile private var cancel = false
 
     override fun onStartJob(params: JobParameters?): Boolean {
-        Timber.v("onStartJob")
+        Timber.d("onStartJob")
 
         // check if group exists first and only after it proceed with SMS
         disposable = MyApp.database.dialogDao().load()
@@ -42,7 +42,7 @@ class SendMessageJobService : JobService() {
                         val tlAbsUpdates = MyApp.kotlogram.client.messagesSendMessage(true, false, false, false,
                                 inputPeerFromDialog(dialog), null, text, Random().nextLong(), null, null)
 
-                        Timber.v("message send result: $tlAbsUpdates")
+                        Timber.d("message send result: $tlAbsUpdates")
                         MyApp.database.smsDao().delete(sms)
                     }
                 })
@@ -52,7 +52,7 @@ class SendMessageJobService : JobService() {
                     Timber.w(it, "Exception while sending messages")
                     jobFinished(params, true)
                 }, {
-                    Timber.v("All messages sent")
+                    Timber.d("All messages sent")
                     jobFinished(params, false)
                 })
 
@@ -72,7 +72,7 @@ class SendMessageJobService : JobService() {
     }
 
     override fun onStopJob(params: JobParameters?): Boolean {
-        Timber.v("onStopJob")
+        Timber.d("onStopJob")
 
         disposable?.let {
             if (it.isDisposed) {
