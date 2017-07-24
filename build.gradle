@@ -28,6 +28,6 @@ task clean(type: Delete) {
 ext {
     buildToolsVersion = "25.0.3"
     supportLibVersion = "25.4.0"
-    archLifecycleVersion = "1.0.0-alpha3"
-    archRoomVersion = "1.0.0-alpha3"
+    archLifecycleVersion = "1.0.0-alpha5"
+    archRoomVersion = "1.0.0-alpha5"
 }

@@ -21,12 +21,11 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import space.naboo.telesam.R
-import space.naboo.telesam.model.Group
+import space.naboo.telesam.model.Dialog
 import space.naboo.telesam.model.User
 import space.naboo.telesam.presenter.MainFragmentPresenter
 
-
-class MainFragment : Fragment(), MainView, GroupClickListener {
+class MainFragment : Fragment(), MainView {
 
     private val SELECT_GROUP_REQUEST_CODE = 1
 
@@ -74,7 +73,7 @@ class MainFragment : Fragment(), MainView, GroupClickListener {
                 startActivity(intent)
             }
         }
-        selectGroupButton.setOnClickListener { presenter.loadGroups(it) }
+        selectGroupButton.setOnClickListener { presenter.loadDialogs(it) }
         telegramSignInButton.setOnClickListener { presenter.onTelegramSignInClick(it, phoneNumberEditText.text) }
         enterCodeButton.setOnClickListener { presenter.onCodeEntered(it, codeFromTelegramEditText.text) }
         logout.setOnClickListener { presenter.logout(it) }
@@ -142,20 +141,20 @@ class MainFragment : Fragment(), MainView, GroupClickListener {
         codeContainer.visibility = View.VISIBLE
     }
 
-    override fun onGroupsAvailable(groups: List<Group>) {
-        val f = GroupPickDialogFragment.newInstance(groups)
+    override fun onDialogsAvailable(dialogs: List<Dialog>) {
+        val f = GroupPickDialogFragment.newInstance(dialogs)
         f.setTargetFragment(this, SELECT_GROUP_REQUEST_CODE)
         f.show(childFragmentManager, GroupPickDialogFragment.TAG)
     }
 
-    override fun onGroupSelected(group: Group?) {
-        if (group != null) {
+    override fun onDialogSelected(dialog: Dialog?) {
+        if (dialog != null) {
             selectGroupText.visibility = View.VISIBLE
 
             val ssb = SpannableStringBuilder()
                     .append(getString(R.string.group_set_message))
                     .append(" ")
-                    .append(group.name, StyleSpan(Typeface.BOLD), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    .append(dialog.name, StyleSpan(Typeface.BOLD), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
 
             selectGroupText.text = ssb
 
@@ -190,10 +189,10 @@ interface MainView {
     fun requestPermissions(permissionList: Array<String>, requestCode: Int)
     fun onPermissionGranted(permissionGranted: Boolean)
     fun onCodeRequested()
-    fun onGroupsAvailable(groups: List<Group>)
+    fun onDialogsAvailable(dialogs: List<Dialog>)
     fun onSignedIn(user: User)
     fun onSignedOut()
-    fun onGroupSelected(group: Group?)
+    fun onDialogSelected(dialog: Dialog?)
     fun isBackgroundModeEnabled(): Boolean
     fun onBackgroundModeEnabled(enabled: Boolean)
 }

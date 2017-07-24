@@ -47,13 +47,13 @@ class SmsReceiver : BroadcastReceiver() {
 
         Observable.create<Unit> {
             Timber.v("Saving message to database")
-            it.onNext(MyApp.database.smsDao().insertAll(messages))
-            it.onComplete()
+            if (MyApp.database.dialogDao().count() > 0) {
+                it.onNext(MyApp.database.smsDao().insertAll(messages))
+            }
         }.subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({}, {
-                    Timber.w(it)
-                }, {
+                .subscribe({
+                    // todo only on actual save
                     Timber.v("Scheduling job")
                     val jobScheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
                     val result = jobScheduler.schedule(
@@ -65,6 +65,8 @@ class SmsReceiver : BroadcastReceiver() {
                     if (result != JobScheduler.RESULT_SUCCESS) {
                         Timber.w("Failed to schedule SMS send")
                     }
+                }, {
+                    Timber.w(it, "Exception while saving messages to database")
                 })
     }
 

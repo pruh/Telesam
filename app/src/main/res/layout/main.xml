@@ -54,12 +54,14 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp">
 
-                <EditText
+                <android.support.design.widget.TextInputEditText
                     android:id="@+id/phone_number"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:maxLines="1"
                     android:hint="@string/enter_phone_number"
+                    android:imeActionId="@+id/telegram_sign_in"
+                    android:imeOptions="actionGo"
                     android:inputType="phone"/>
             </android.support.design.widget.TextInputLayout>
 
@@ -81,12 +83,14 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp">
 
-                <EditText
+                <android.support.design.widget.TextInputEditText
                     android:id="@+id/telegram_code"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:maxLines="1"
-                    android:hint="@string/enter_telegram_code_here"/>
+                    android:hint="@string/enter_telegram_code_here"
+                    android:imeActionId="@+id/code_enter"
+                    android:imeOptions="actionGo" />
             </android.support.design.widget.TextInputLayout>
 
             <Button

@@ -1,7 +1,6 @@
 package space.naboo.telesam.view
 
 import android.app.AlertDialog
-import android.app.Dialog
 import android.os.Bundle
 import android.support.v4.app.DialogFragment
 import android.support.v7.widget.LinearLayoutManager
@@ -10,57 +9,77 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import space.naboo.telesam.Prefs
+import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
+import space.naboo.telesam.MyApp
 import space.naboo.telesam.R
-import space.naboo.telesam.model.Group
+import space.naboo.telesam.model.Dialog
 import timber.log.Timber
+
+typealias AndroidDialog = android.app.Dialog
 
 class GroupPickDialogFragment : DialogFragment() {
 
     companion object {
         val TAG: String = GroupPickDialogFragment::class.java.simpleName
-        private val GROUPS_KEY = "GROUPS_KEY"
+        private val DIALOGS_KEY = "DIALOGS_KEY"
 
-        fun newInstance(groups: List<Group>): GroupPickDialogFragment {
+        fun newInstance(dialogs: List<Dialog>): GroupPickDialogFragment {
             val f = GroupPickDialogFragment()
             val args = Bundle()
-            if (groups is ArrayList) {
-                args.putParcelableArrayList(GROUPS_KEY, groups)
+            if (dialogs is ArrayList) {
+                args.putParcelableArrayList(DIALOGS_KEY, dialogs)
             } else {
-                args.putParcelableArrayList(GROUPS_KEY, ArrayList(groups))
+                args.putParcelableArrayList(DIALOGS_KEY, ArrayList(dialogs))
             }
             f.arguments = args
             return f
         }
     }
 
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+    override fun onCreateDialog(savedInstanceState: Bundle?): AndroidDialog {
         val context = activity
         val recyclerView = View.inflate(context, R.layout.group_pick_layout, null) as RecyclerView
-        val dialog = AlertDialog.Builder(context)
+        val alertDialog = AlertDialog.Builder(context)
                 .setTitle(R.string.select_telegram_group)
                 .setView(recyclerView)
                 .create()
 
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.setHasFixedSize(true)
-        recyclerView.adapter = GroupsAdapter(arguments.getParcelableArrayList<Group>(GROUPS_KEY), object : GroupClickListener {
-            override fun onGroupSelected(group: Group?) {
-                Timber.v("selected group: $group")
+        recyclerView.adapter = GroupsAdapter(arguments.getParcelableArrayList<Dialog>(DIALOGS_KEY), object : DialogClickListener {
+            override fun onDialogSelected(dialog: Dialog) {
+                Timber.v("selected dialog: $dialog")
+
+                storeSelectedDialog(dialog)
+                (targetFragment as MainView).onDialogSelected(dialog)
 
                 dismiss()
-
-                Prefs().groupId = group?.id ?: 0
-                (targetFragment as GroupClickListener).onGroupSelected(group)
             }
         })
 
-        return dialog
+        return alertDialog
+    }
+
+    fun storeSelectedDialog(dialog: Dialog) {
+        Timber.d("Saving dialog: $dialog")
+
+        Observable.fromCallable {
+            MyApp.database.dialogDao().deleteAll()
+            MyApp.database.dialogDao().insert(dialog) }
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    Timber.d("Dialog saved")
+                }, {
+                    Timber.e(it, "Exception while saving dialog to database")
+                })
     }
 
 }
 
-private class GroupsAdapter(val groups: List<Group>, val groupClickListener: GroupClickListener)
+private class GroupsAdapter(val dialogs: List<Dialog>, val dialogClickListener: DialogClickListener)
         : RecyclerView.Adapter<GroupsAdapter.GroupViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): GroupViewHolder {
@@ -68,19 +87,19 @@ private class GroupsAdapter(val groups: List<Group>, val groupClickListener: Gro
     }
 
     override fun onBindViewHolder(holder: GroupViewHolder, position: Int) {
-        val group = groups[position]
+        val group = dialogs[position]
 
         holder.textView.text = group.name
-        holder.itemView.setOnClickListener { groupClickListener.onGroupSelected(group) }
+        holder.itemView.setOnClickListener { dialogClickListener.onDialogSelected(group) }
     }
 
-    override fun getItemCount() = groups.size
+    override fun getItemCount() = dialogs.size
 
     class GroupViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val textView by lazy { view as TextView }
     }
 }
 
-interface GroupClickListener {
-    fun onGroupSelected(group: Group?)
+private interface DialogClickListener {
+    fun onDialogSelected(dialog: Dialog)
 }
