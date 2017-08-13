@@ -2,11 +2,11 @@ package space.naboo.telesam
 
 import android.app.Application
 import android.content.Context
+import io.reactivex.plugins.RxJavaPlugins
 import space.naboo.telesam.db.AppDatabase
 import space.naboo.telesam.db.DatabaseHelper
 import space.naboo.telesam.telegram.KotlogramWrapper
 import timber.log.Timber
-
 
 class MyApp : Application() {
 
@@ -30,6 +30,8 @@ class MyApp : Application() {
 
         database = DatabaseHelper(this).appDatabase
         kotlogram = KotlogramWrapper()
+
+        setRxGlobalErrorHandler()
     }
 
     private fun initTimber(context: Context) {
@@ -39,6 +41,12 @@ class MyApp : Application() {
             // todo add some persistent tree that I can check, like rolling file appender
         } else {
             // todo plant Production Tree
+        }
+    }
+
+    private fun setRxGlobalErrorHandler() {
+        RxJavaPlugins.setErrorHandler { e ->
+            Timber.w(e, "Caught global exception")
         }
     }
 

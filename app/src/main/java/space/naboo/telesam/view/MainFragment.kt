@@ -82,7 +82,8 @@ class MainFragment : Fragment(), MainView {
     override fun onResume() {
         super.onResume()
 
-        presenter.onForeground()
+        // need to check background moe as there is no callback
+        presenter.updateBackgroundMode()
     }
 
     override fun checkSelfPermission(permissions: Array<String>): Int {

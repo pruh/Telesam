@@ -13,11 +13,11 @@ import io.reactivex.Maybe
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.functions.BiFunction
-import io.reactivex.plugins.RxJavaPlugins
 import io.reactivex.schedulers.Schedulers
 import space.naboo.telesam.MyApp
 import space.naboo.telesam.Prefs
 import space.naboo.telesam.model.Dialog
+import space.naboo.telesam.model.FileLocation
 import space.naboo.telesam.model.User
 import space.naboo.telesam.view.MainView
 import timber.log.Timber
@@ -42,10 +42,6 @@ class MainFragmentPresenter(val mainView: MainView) {
         mainView.onBackgroundModeEnabled(mainView.isBackgroundModeEnabled())
 
         fetchAllTelegramData()
-
-        RxJavaPlugins.setErrorHandler { e ->
-            Timber.w(e, "Caught global exception")
-        }
     }
 
     private fun fetchAllTelegramData() {
@@ -88,8 +84,7 @@ class MainFragmentPresenter(val mainView: MainView) {
                 })
     }
 
-    fun onForeground() {
-        // need to check background moe as there is no callback
+    fun updateBackgroundMode() {
         mainView.onBackgroundModeEnabled(mainView.isBackgroundModeEnabled())
     }
 
@@ -189,7 +184,7 @@ class MainFragmentPresenter(val mainView: MainView) {
                         } ?: firstName
                     } ?: user.username
 
-                    Dialog(user.id, user.accessHash, Dialog.TYPE_USER, title)
+                    Dialog(user.id, user.accessHash, Dialog.TYPE_USER, title, fileLocationFromTl(user.photo?.asUserProfilePhoto?.photoSmall))
                 }
                 is TLPeerChat -> {
                     parseChatOrChannel(absChatsMap, peer)
@@ -211,7 +206,7 @@ class MainFragmentPresenter(val mainView: MainView) {
                     return null
                 }
 
-                return Dialog(absChat.id, 0, Dialog.TYPE_CHAT, absChat.title)
+                return Dialog(absChat.id, 0, Dialog.TYPE_CHAT, absChat.title, fileLocationFromTl(absChat.photo?.asChatPhoto?.photoSmall))
             }
             is TLChannel -> {
                 if (!absChat.megagroup || absChat.kicked || absChat.left) {
@@ -219,10 +214,23 @@ class MainFragmentPresenter(val mainView: MainView) {
                     return null
                 }
 
-                return Dialog(absChat.id, absChat.accessHash, Dialog.TYPE_CHANNEL, absChat.title)
+                return Dialog(absChat.id, absChat.accessHash, Dialog.TYPE_CHANNEL, absChat.title, fileLocationFromTl(absChat.photo.asChatPhoto.photoSmall))
             }
             else -> {
                 Timber.d("chat with id: ${peer.chatId} not found")
+                return null
+            }
+        }
+    }
+
+    private fun fileLocationFromTl(absFileLocation: TLAbsFileLocation?): FileLocation? {
+        when (absFileLocation) {
+            is TLFileLocation -> {
+                return FileLocation(absFileLocation.dcId, absFileLocation.volumeId, absFileLocation.localId,
+                        absFileLocation.secret)
+            }
+            else -> {
+                Timber.w("Cannot create file location from $absFileLocation")
                 return null
             }
         }
